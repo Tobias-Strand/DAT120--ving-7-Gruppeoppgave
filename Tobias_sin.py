@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 Studieplan-menyprogram
-
+x
 Funksjoner:
 1. Lag et nytt emne
 2. Legg til et emne i studieplanen
