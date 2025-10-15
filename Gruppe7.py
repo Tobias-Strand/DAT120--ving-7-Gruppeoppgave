@@ -56,14 +56,11 @@ def skriv_meny():
 
 # ============================================
 # === Del 2: Mika =============================
-# Domenelogikk og hjelpefunksjoner
+# Domenelogikk, hjelpefunksjoner og menyvalg 1
 # --------------------------------------------
 # Forklaring:
-# En "ordbok" (dictionary) brukes til å lagre informasjon med nøkkel og verdi, f.eks. emnekode → data.
-# En "liste" er en samling av flere elementer som kan endres.
-# Her brukes en ordbok til å lagre hvilke emner som ligger i hvert semester.
-# "sum_sp" summerer antall studiepoeng for et gitt semester.
-# "sem_type" sjekker om semesteret er høst (H) eller vår (V).
+# En ordbok brukes til å lagre informasjon med nøkkel og verdi.
+# bruker en ordbok til å lagre hvilke emner som ligger i hvert semester.
 # ============================================
 
 def tom_plan():
@@ -75,14 +72,25 @@ def sem_type(sem):
     return "H" if sem in (1, 3, 5) else "V"
 
 def sum_sp(emner, plan, sem):
+    # summerer studiepoengene for semester
     return sum(emner[k]["sp"] for k in plan.get(sem, []))
 
 def finnes_i_plan(plan, kode):
+    # sjekker om fagkoden finnes fra før, returnerer hvis den eksiterer i en annen liste fra før.
     return any(kode in lst for lst in plan.values())
+
+
+def v1_nytt_emne(emner):
+    kode = ask_str("Emnekode (f.eks. MAT100): ").upper()
+    term = ask_term("Undervises H/V: ")
+    sp = ask_int("Studiepoeng (heltall): ", lo=1)
+    emner[kode] = {"t": term, "sp": sp}
+    print(f"Lagret {kode}: {term}, {sp} sp.")
+
 
 # ============================================
 # === Del 3: Bonaa ============================
-# Menyvalg 1–4
+# Menyvalg 2–4
 # --------------------------------------------
 # Forklaring:
 # Her lages og vises selve innholdet i studieplanen.
@@ -92,12 +100,6 @@ def finnes_i_plan(plan, kode):
 # "print" viser informasjon til brukeren i terminalen.
 # ============================================
 
-def v1_nytt_emne(emner):
-    kode = ask_str("Emnekode (f.eks. MAT100): ").upper()
-    term = ask_term("Undervises H/V: ")
-    sp = ask_int("Studiepoeng (heltall): ", lo=1)
-    emner[kode] = {"t": term, "sp": sp}
-    print(f"Lagret {kode}: {term}, {sp} sp.")
 
 def v2_legge_til_i_plan(emner, plan):
     if not emner:
