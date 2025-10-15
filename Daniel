@@ -1,1 +1,28 @@
+# emner.py
+
+emnekoder = []
+semestre = []  # 'høst' eller 'vår'
+studiepoeng = []
+
+def lag_nytt_emne():
+    kode = input("Skriv emnekode (f.eks. INF100): ")
+    semester = input("Undervises emnet i høst eller vår? ").lower()
+    poeng = int(input("Antall studiepoeng: "))
+
+    if semester not in ["høst", "vår"]:
+        print("Ugyldig semester, prøv igjen.")
+        return
+
+    emnekoder.append(kode)
+    semestre.append(semester)
+    studiepoeng.append(poeng)
+    print(f"Emnet {kode} ble lagt til.")
+
+def skriv_ut_emner():
+    if not emnekoder:
+        print("Ingen emner er registrert ennå.")
+        return
+    print("\n--- Alle registrerte emner ---")
+    for i in range(len(emnekoder)):
+        print(f"{emnekoder[i]} ({semestre[i]}, {studiepoeng[i]} studiepoeng)")
 
