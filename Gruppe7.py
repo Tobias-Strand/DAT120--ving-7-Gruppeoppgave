@@ -1,21 +1,18 @@
-# ============================================
+
 # DAT120 Øving 7 – Gruppeprosjekt del 1
 # Gruppe: Tobias, Mika, Bonaa, Daniel
-# ============================================
 
 import json
 
-# ============================================
-# === Del 1: Tobias ===========================
+# Del 1: Tobias 
 # Input-funksjoner og hovedloop
-# --------------------------------------------
-# Forklaring:
+
 # En "funksjon" er en liten bit kode som kan brukes flere ganger.
 # "Input" betyr at brukeren skriver inn noe, for eksempel tekst eller tall.
 # En "while True"-løkke kjører helt til vi stopper den med "break".
 # "return" sender verdien tilbake til stedet der funksjonen ble kalt.
 # I hovedloopen brukes tallene (1–8) for å velge hva programmet skal gjøre.
-# ============================================
+
 
 def ask_int(prompt, lo=None, hi=None):
     while True:
@@ -205,9 +202,8 @@ def v7_les():
         print("Feil ved lesing:", e)
         return None, None
 
-# ============================================
-# === Tobias: fortsetter med hovedloop =========
-# ============================================
+
+#Tobias: avslutter hovedloop
 
 def main():
     emner = {}
