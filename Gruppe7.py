@@ -1,184 +1,177 @@
-#Bonaa!!!!!!
-# emner.py
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-emnekoder = []
-semestre = []  # 'høst' eller 'vår'
-studiepoeng = []
+"""
+DAT120 øving 7 – Del 1 (forenklet løsning for menyvalg 1–8)
 
-def lag_nytt_emne():
-    kode = input("Skriv emnekode (f.eks. INF100): ")
-    semester = input("Undervises emnet i høst eller vår? ").lower()
-    poeng = int(input("Antall studiepoeng: "))
+- Emner lagres som: emner[kode] = {"t": "H"/"V", "sp": int}
+- Studieplan lagres som: plan[semester] = [emnekoder]
+- Validering ved innlegging: unikhet, riktig termin (H: 1/3/5, V: 2/4/6), maks 30 sp
+- Lagring/lesing på JSON-format
+"""
 
-    if semester not in ["høst", "vår"]:
-        print("Ugyldig semester, prøv igjen.")
-        return
+import json
 
-    emnekoder.append(kode)
-    semestre.append(semester)
-    studiepoeng.append(poeng)
-    print(f"Emnet {kode} ble lagt til.")
+# ---------- Små, gjenbrukbare input-funksjoner ----------
 
-def skriv_ut_emner():
-    if not emnekoder:
-        print("Ingen emner er registrert ennå.")
-        return
-    print("\n--- Alle registrerte emner ---")
-    for i in range(len(emnekoder)):
-        print(f"{emnekoder[i]} ({semestre[i]}, {studiepoeng[i]} studiepoeng)")
+def ask_int(prompt, lo=None, hi=None):
+    while True:
+        s = input(prompt).strip()
+        try:
+            v = int(s)
+            if lo is not None and v < lo:  print(f"Må være >= {lo}.");  continue
+            if hi is not None and v > hi:  print(f"Må være <= {hi}.");  continue
+            return v
+        except ValueError:
+            print("Ugyldig tall, prøv igjen.")
 
+def ask_str(prompt):
+    while True:
+        s = input(prompt).strip()
+        if s: return s
+        print("Kan ikke være tomt.")
 
+def ask_term(prompt="Semester (H/V): "):
+    while True:
+        s = input(prompt).strip().upper()
+        if s in ("H","V"): return s
+        print("Skriv H (høst) eller V (vår).")
 
+# ---------- Domenelogikk ----------
 
-#Daniel!!!!!!!
+def tom_plan():
+    # Seks semestre (1–6), tomme lister
+    return {i: [] for i in range(1, 7)}
 
-# studieplan.py
+def sem_type(sem):
+    # 1/3/5 = H, 2/4/6 = V
+    return "H" if sem in (1,3,5) else "V"
 
-from emner import emnekoder, semestre, studiepoeng
+def sum_sp(emner, plan, sem):
+    return sum(emner[k]["sp"] for k in plan.get(sem, []))
 
-# Seks semester, hver er en liste med indekser til emne-listene
-studieplan = [[], [], [], [], [], []]
+def finnes_i_plan(plan, kode):
+    return any(kode in lst for lst in plan.values())
 
-def legg_til_emne_i_studieplan():
-    kode = input("Skriv emnekode: ")
+# ---------- Menyvalg ----------
 
-    if kode not in emnekoder:
-        print("Emnet finnes ikke. Lag det først.")
-        return
+def v1_nytt_emne(emner):
+    kode = ask_str("Emnekode (f.eks. MAT100): ").upper()
+    term = ask_term("Undervises H/V: ")
+    sp = ask_int("Studiepoeng (heltall): ", lo=1)
+    emner[kode] = {"t": term, "sp": sp}
+    print(f"Lagret {kode}: {term}, {sp} sp.")
 
-    indeks = emnekoder.index(kode)
-    sem_type = semestre[indeks]  # 'høst' eller 'vår'
+def v2_legge_til_i_plan(emner, plan):
+    if not emner:
+        print("Ingen emner registrert. Lag emner først (1).");  return
+    kode = ask_str("Emnekode å legge til: ").upper()
+    if kode not in emner:
+        print("Emnet finnes ikke i registeret.");  return
+    if finnes_i_plan(plan, kode):
+        print("Emnet er allerede i studieplanen.");  return
+    sem = ask_int("Semester (1–6): ", lo=1, hi=6)
 
-    semester_nr = int(input("Hvilket semester (1-6)? ")) - 1
+    # Sjekk termin
+    if emner[kode]["t"] != sem_type(sem):
+        print(f"Ugyldig semester: {kode} har {emner[kode]['t']}, "
+              f"men semester {sem} er {sem_type(sem)}."); return
 
-    # sjekk at emnet ikke allerede finnes
-    for s in studieplan:
-        if indeks in s:
-            print("Dette emnet er allerede i studieplanen.")
-            return
+    # Sjekk 30-sp-grense
+    ny_sum = sum_sp(emner, plan, sem) + emner[kode]["sp"]
+    if ny_sum > 30:
+        print(f"Overskrider 30 sp i semester {sem} (ville blitt {ny_sum} sp)."); return
 
-    # sjekk semester gyldighet
-    if sem_type == "høst" and semester_nr not in [0, 2, 4]:
-        print("Høstemner kan bare være i semester 1, 3 eller 5.")
-        return
-    if sem_type == "vår" and semester_nr not in [1, 3, 5]:
-        print("Våremner kan bare være i semester 2, 4 eller 6.")
-        return
+    plan[sem].append(kode)
+    print(f"La til {kode} i semester {sem}. (Sum nå: {ny_sum} sp)")
 
-    # sjekk poenggrense
-    total_poeng = sum(studiepoeng[i] for i in studieplan[semester_nr])
-    if total_poeng + studiepoeng[indeks] > 30:
-        print("Semesteret har ikke plass til flere emner (maks 30 studiepoeng).")
-        return
+def v3_skriv_emner(emner):
+    if not emner:
+        print("Ingen emner registrert."); return
+    print("\nRegistrerte emner\n" + "-"*36)
+    for kode in sorted(emner):
+        d = emner[kode]
+        print(f"{kode:10s} | termin: {d['t']} | sp: {d['sp']}")
+    print("-"*36)
 
-    studieplan[semester_nr].append(indeks)
-    print(f"La til {kode} i semester {semester_nr + 1}.")
+def v4_skriv_plan(emner, plan):
+    print("\nStudieplan\n" + "="*36)
+    for sem in range(1,7):
+        sesong = "Høst" if sem_type(sem)=="H" else "Vår"
+        print(f"Semester {sem} ({sesong})")
+        if not plan[sem]:
+            print("  (Ingen emner)")
+        else:
+            for k in plan[sem]:
+                print(f"  - {k} ({emner[k]['sp']} sp)")
+        print(f"  Sum: {sum_sp(emner, plan, sem)} sp\n" + "-"*36)
 
-def skriv_ut_studieplan():
-    print("\n--- Studieplan ---")
-    for i, semester in enumerate(studieplan, start=1):
-        emner_i_semester = [emnekoder[j] for j in semester]
-        poengsum = sum(studiepoeng[j] for j in semester)
-        print(f"Semester {i}: {', '.join(emner_i_semester) or 'Ingen emner'} ({poengsum} stp)")
+def v5_sjekk_gyldig(emner, plan):
+    avvik = [(sem, sum_sp(emner, plan, sem)) for sem in range(1,7) if sum_sp(emner, plan, sem) != 30]
+    if not avvik:
+        print("Studieplanen er gyldig.(30 sp i alle semestre).")
+    else:
+        print("Studieplanen er IKKE gyldig. Avvik:")
+        for sem, total in avvik:
+            print(f"  Semester {sem}: {total} sp (skal være 30 sp)")
 
-def sjekk_gyldighet():
-    gyldig = True
-    for i, semester in enumerate(studieplan, start=1):
-        poengsum = sum(studiepoeng[j] for j in semester)
-        if poengsum != 30:
-            print(f"Semester {i} er ikke gyldig ({poengsum} stp).")
-            gyldig = False
-    if gyldig:
-        print("Studieplanen er gyldig (alle semestre har 30 studiepoeng).")
+def v6_lagre(emner, plan):
+    fil = ask_str("Filnavn å lagre til (f.eks. plan.json): ")
+    try:
+        with open(fil, "w", encoding="utf-8") as f:
+            json.dump({"emner": emner, "plan": plan}, f, ensure_ascii=False, indent=2)
+        print(f"Lagret til '{fil}'.")
+    except OSError as e:
+        print("Feil ved lagring:", e)
 
+def v7_les():
+    fil = ask_str("Filnavn å lese fra (f.eks. plan.json): ")
+    try:
+        with open(fil, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        emner = data.get("emner", {})
+        plan = data.get("plan", tom_plan())
+        # Sørg for 1–6 finnes
+        for i in range(1,7):
+            plan.setdefault(i, [])
+        print(f"Lest fra '{fil}'.")
+        return emner, plan
+    except (OSError, json.JSONDecodeError) as e:
+        print("Feil ved lesing:", e)
+        return None, None
 
-#Mika!!!!!!!!!!!!!!
+# ---------- Meny/loop ----------
 
-
-# filhåndtering.py
-
-from emner import emnekoder, semestre, studiepoeng
-from studieplan import studieplan
-
-def lagre_til_fil():
-    with open("data/emner.txt", "w", encoding="utf-8") as f:
-        for i in range(len(emnekoder)):
-            f.write(f"{emnekoder[i]},{semestre[i]},{studiepoeng[i]}\n")
-
-    with open("data/studieplan.txt", "w", encoding="utf-8") as f:
-        for semester in studieplan:
-            f.write(",".join(str(i) for i in semester) + "\n")
-
-    print("Data er lagret til fil.")
-
-def les_fra_fil():
-    emnekoder.clear()
-    semestre.clear()
-    studiepoeng.clear()
-    studieplan.clear()
-
-    with open("data/emner.txt", "r", encoding="utf-8") as f:
-        for linje in f:
-            kode, sem, poeng = linje.strip().split(",")
-            emnekoder.append(kode)
-            semestre.append(sem)
-            studiepoeng.append(int(poeng))
-
-    with open("data/studieplan.txt", "r", encoding="utf-8") as f:
-        for linje in f:
-            if linje.strip():
-                indekser = [int(x) for x in linje.strip().split(",") if x]
-                studieplan.append(indekser)
-            else:
-                studieplan.append([])
-
-    print("Data er lest inn fra fil.")
-
-
-#Tobias!!!!!!!!!
-
-
-# main.py
-
-from emner import lag_nytt_emne, skriv_ut_emner
-from studieplan import legg_til_emne_i_studieplan, skriv_ut_studieplan, sjekk_gyldighet
-from filhåndtering import lagre_til_fil, les_fra_fil
+def skriv_meny():
+    print("\nMeny:")
+    print("1. Lag et nytt emne")
+    print("2. Legg til et emne i studieplanen")
+    print("3. Skriv ut ei liste over alle registrerte emner")
+    print("4. Skriv ut studieplanen med hvilke emner som er i hvert semester")
+    print("5. Sjekk om studieplanen er gyldig eller ikke")
+    print("6. Lagre emnene og studieplanen til fil")
+    print("7. Les inn emnene og studieplanen fra fil")
+    print("8. Avslutt")
 
 def main():
+    emner = {}
+    plan = tom_plan()
+
     while True:
-        print("\n--- Studieplanmeny ---")
-        print("1. Lag et nytt emne")
-        print("2. Legg til et emne i studieplanen")
-        print("3. Skriv ut alle registrerte emner")
-        print("4. Skriv ut studieplanen")
-        print("5. Sjekk om studieplanen er gyldig")
-        print("6. Lagre til fil")
-        print("7. Les fra fil")
-        print("8. Avslutt")
-
-        valg = input("Velg et alternativ: ")
-
-        if valg == "1":
-            lag_nytt_emne()
-        elif valg == "2":
-            legg_til_emne_i_studieplan()
-        elif valg == "3":
-            skriv_ut_emner()
-        elif valg == "4":
-            skriv_ut_studieplan()
-        elif valg == "5":
-            sjekk_gyldighet()
-        elif valg == "6":
-            lagre_til_fil()
-        elif valg == "7":
-            les_fra_fil()
-        elif valg == "8":
-            print("Avslutter programmet.")
+        skriv_meny()
+        valg = ask_int("Velg (1–8): ", lo=1, hi=8)
+        if valg == 1: v1_nytt_emne(emner)
+        elif valg == 2: v2_legge_til_i_plan(emner, plan)
+        elif valg == 3: v3_skriv_emner(emner)
+        elif valg == 4: v4_skriv_plan(emner, plan)
+        elif valg == 5: v5_sjekk_gyldig(emner, plan)
+        elif valg == 6: v6_lagre(emner, plan)
+        elif valg == 7:
+            e, p = v7_les()
+            if e is not None: emner, plan = e, p
+        elif valg == 8:
+            print("Avslutter. Ha en fin dag!")
             break
-        else:
-            print("Ugyldig valg, prøv igjen.")
 
 if __name__ == "__main__":
     main()
-
-
