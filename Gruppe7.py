@@ -150,17 +150,11 @@ def v4_skriv_plan(emner, plan):
                 print(f"  - {k} ({emner[k]['sp']} sp)")
         print(f"  Sum: {sum_sp(emner, plan, sem)} sp\n" + "-"*36)
 
-# ============================================
-# === Del 4: Daniel ===========================
+
+# Del 4: Daniel 
 # Menyvalg 5–7 og filoperasjoner
-# --------------------------------------------
-# Forklaring:
-# "JSON" er et filformat som brukes til å lagre data på en enkel måte.
-# Når vi "lagrer", skriver vi data til en fil slik at de kan hentes senere.
-# "try/except" brukes for å håndtere feil uten at programmet krasjer.
-# En "gyldig plan" betyr at alle semestre har nøyaktig 30 studiepoeng.
-# "json.dump" og "json.load" brukes for å skrive og lese filer i JSON-format.
-# ============================================
+
+
 
 def v5_sjekk_gyldig(emner, plan):
     avvik = []
@@ -191,7 +185,6 @@ def v7_les():
             data = json.load(f)
         emner = data.get("emner", {})
         plan = data.get("plan", tom_plan())
-        # sørg for at 1–6 finnes
         for i in range(1, 7):
             plan.setdefault(i, [])
         print(f"Lest fra '{fil}'.")
