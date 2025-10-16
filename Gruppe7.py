@@ -5,13 +5,8 @@
 import json
 
 # Del 1: Tobias 
-# Input-funksjoner og hovedloop
+# Input-funksjoner og hovedloop (framework)
 
-# En "funksjon" er en liten bit kode som kan brukes flere ganger.
-# "Input" betyr at brukeren skriver inn noe, for eksempel tekst eller tall.
-# En "while True"-løkke kjører helt til vi stopper den med "break".
-# "return" sender verdien tilbake til stedet der funksjonen ble kalt.
-# I hovedloopen brukes tallene (1–8) for å velge hva programmet skal gjøre.
 
 
 def ask_int(prompt, lo=None, hi=None):
@@ -199,7 +194,7 @@ def v7_les():
         return None, None
 
 
-#Tobias: avslutter hovedloop
+#Tobias: avslutter hovedloop og avslutter programmet hvis bruker velger 8. Dette er også der programmet blir valgt.
 
 def main():
     emner = {}
