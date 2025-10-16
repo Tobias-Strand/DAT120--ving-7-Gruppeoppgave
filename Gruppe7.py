@@ -226,7 +226,7 @@ def main():
             if e is not None:
                 emner, plan = e, p
         elif valg == 8:
-            print("Avslutter. Ha en fin dag!")
+            print("Avslutter programmet.")
             break
 
 if __name__ == "__main__":
