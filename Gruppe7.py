@@ -75,7 +75,7 @@ def v1_nytt_emne(emner):
     print(f"Lagret {kode}: {term}, {sp} sp.")
 
 
-#Del 3: Bonaa
+#Del 3: Bonaa Menyvalg 2-4
 
 
 
