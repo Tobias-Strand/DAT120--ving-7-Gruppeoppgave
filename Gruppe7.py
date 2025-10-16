@@ -88,17 +88,8 @@ def v1_nytt_emne(emner):
     print(f"Lagret {kode}: {term}, {sp} sp.")
 
 
-# ============================================
-# === Del 3: Bonaa ============================
-# Menyvalg 2–4
-# --------------------------------------------
-# Forklaring:
-# Her lages og vises selve innholdet i studieplanen.
-# Brukeren kan registrere nye emner, legge dem til i riktig semester og se alt som er registrert.
-# "append" brukes for å legge et nytt element inn i en liste.
-# "if" og "else" brukes for å kontrollere hva som skjer basert på betingelser.
-# "print" viser informasjon til brukeren i terminalen.
-# ============================================
+#Del 3: Bonaa
+
 
 
 def v2_legge_til_i_plan(emner, plan):
@@ -119,10 +110,10 @@ def v2_legge_til_i_plan(emner, plan):
     sem = ask_int("Semester (1–6): ", lo=1, hi=6) #hvillket semester emnet skal legges inn i
 
     # Sjekk termin
-    if emner[kode]["t"] != sem_type(sem):
-        print(f"Ugyldig semester: {kode} har {emner[kode]['t']}, " # Sjekker om at emnet legg inn i riktig termin
-              f"men semester {sem} er {sem_type(sem)}.")
-        return
+    if emner[kode]["t"] != sem_type(sem): # Sjekker om termin for emnet ikke passer med semesteret
+        print(f"Ugyldig semester: {kode} har {emner[kode]['t']}, " # Skriver hvilken termin emnet har
+              f"men semester {sem} er {sem_type(sem)}.") # Skriver hvilken termin semesteret er
+        return # hvis emneets termin ikke passer med semesteret så stopper funksjonen
 
     # Sjekk 30-sp-grense
     ny_sum = sum_sp(emner, plan, sem) + emner[kode]["sp"]
