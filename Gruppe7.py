@@ -80,17 +80,8 @@ def v1_nytt_emne(emner):
     print(f"Lagret {kode}: {term}, {sp} sp.")
 
 
-# ============================================
-# === Del 3: Bonaa ============================
-# Menyvalg 2–4
-# --------------------------------------------
-# Forklaring:
-# Her lages og vises selve innholdet i studieplanen.
-# Brukeren kan registrere nye emner, legge dem til i riktig semester og se alt som er registrert.
-# "append" brukes for å legge et nytt element inn i en liste.
-# "if" og "else" brukes for å kontrollere hva som skjer basert på betingelser.
-# "print" viser informasjon til brukeren i terminalen.
-# ============================================
+#Del 3: Bonaa
+
 
 
 def v2_legge_til_i_plan(emner, plan):
@@ -99,62 +90,59 @@ def v2_legge_til_i_plan(emner, plan):
         return
     kode = ask_str("Emnekode å legge til: ").upper()
     if kode not in emner:
-        print("Emnet finnes ikke i registeret.")
-        return
+        print("Emnet finnes ikke i registeret.")   ##Avsnittet kontrollerer at brukeren bare kan legge til et gyldig emne i studieplanen.
+        return                             #Først sjekkes det at det finnes registrerte emner. Deretter ber programmet brukeren skrive inn en emnekode 
+                                             #Så sjekkes det at emnet faktisk finnes i registeret, og at det ikke allerede ligger i studieplanen.
+                                         #Hvis noe av dette ikke stemmer, får brukeren en feilmelding og funksjonen stopper.
+        
     if finnes_i_plan(plan, kode):
-        print("Emnet er allerede i studieplanen.")
+        print("Emnet er allerede i studieplanen.")  #hvis den allerede ligg i studieplanen så printes det "emnet er allerede i studieplanen"
         return
 
-    sem = ask_int("Semester (1–6): ", lo=1, hi=6)
+    sem = ask_int("Semester (1–6): ", lo=1, hi=6) #hvillket semester emnet skal legges inn i
 
     # Sjekk termin
-    if emner[kode]["t"] != sem_type(sem):
-        print(f"Ugyldig semester: {kode} har {emner[kode]['t']}, "
-              f"men semester {sem} er {sem_type(sem)}.")
-        return
+    if emner[kode]["t"] != sem_type(sem): # Sjekker om termin for emnet ikke passer med semesteret
+        print(f"Ugyldig semester: {kode} har {emner[kode]['t']}, " # Skriver hvilken termin emnet har
+              f"men semester {sem} er {sem_type(sem)}.") # Skriver hvilken termin semesteret er
+        return # hvis emneets termin ikke passer med semesteret så stopper funksjonen
 
     # Sjekk 30-sp-grense
     ny_sum = sum_sp(emner, plan, sem) + emner[kode]["sp"]
-    if ny_sum > 30:
-        print(f"Overskrider 30 sp i semester {sem} (ville blitt {ny_sum} sp).")
+    if ny_sum > 30:   # dette avsnittet passer på at et semester ikke får mer enn 30 studiepoeng # hvis du prøver å legge inn
+        print(f"Overskrider 30 sp i semester {sem} (ville blitt {ny_sum} sp).") # et emne som gir over 30 poeng så får du advarsel og det avsluttes 
         return
 
-    plan[sem].append(kode)
-    print(f"La til {kode} i semester {sem}. (Sum nå: {ny_sum} sp)")
+    plan[sem].append(kode) 
+    print(f"La til {kode} i semester {sem}. (Sum nå: {ny_sum} sp)") #dette avsnittet legger emne i studieplanen
 
-def v3_skriv_emner(emner):
+def v3_skriv_emner(emner): # Sjekk om listen med emner er tom
     if not emner:
-        print("Ingen emner registrert.")
+        print("Ingen emner registrert.") # hvis ingen emner finnes så stoppes funksjonen her
         return
-    print("\nRegistrerte emner\n" + "-"*36)
-    for kode in sorted(emner):
+    print("\nRegistrerte emner\n" + "-"*36) # \n lager ny linje, "-"*36 lager en horisontal linje
+    for kode in sorted(emner): # går gjennom emnene i alfabetisk rekkefølge
         d = emner[kode]
-        print(f"{kode:10s} | termin: {d['t']} | sp: {d['sp']}")
-    print("-"*36)
+        print(f"{kode:10s} | termin: {d['t']} | sp: {d['sp']}") # skriv ut en linkje for hvert emne med kode termin og studiepoeng
+    print("-"*36) # avsluttes med å skrive en strek for listen
 
 def v4_skriv_plan(emner, plan):
     print("\nStudieplan\n" + "="*36)
-    for sem in range(1, 7):
-        sesong = "Høst" if sem_type(sem) == "H" else "Vår"
-        print(f"Semester {sem} ({sesong})")
-        if not plan[sem]:
+    for sem in range(1, 7): # går gjennom alle semester fra 1 til 6
+        sesong = "Høst" if sem_type(sem) == "H" else "Vår" # finner ut om semesteret er høst eller vår
+        print(f"Semester {sem} ({sesong})") #printer ut semester og sesong
+        if not plan[sem]: #hvis listen er tom så finnes det ikke noe emner
             print("  (Ingen emner)")
         else:
-            for k in plan[sem]:
-                print(f"  - {k} ({emner[k]['sp']} sp)")
-        print(f"  Sum: {sum_sp(emner, plan, sem)} sp\n" + "-"*36)
+            for k in plan[sem]: # Hvis det finnes emner, så skrives hvert emne med studiepoeng
+                print(f"  - {k} ({emner[k]['sp']} sp)") 
+        print(f"  Sum: {sum_sp(emner, plan, sem)} sp\n" + "-"*36) # Skrives totalsum for semesteret og avslutt med en linje for ryddighet
 
-# ============================================
-# === Del 4: Daniel ===========================
+
+# Del 4: Daniel 
 # Menyvalg 5–7 og filoperasjoner
-# --------------------------------------------
-# Forklaring:
-# "JSON" er et filformat som brukes til å lagre data på en enkel måte.
-# Når vi "lagrer", skriver vi data til en fil slik at de kan hentes senere.
-# "try/except" brukes for å håndtere feil uten at programmet krasjer.
-# En "gyldig plan" betyr at alle semestre har nøyaktig 30 studiepoeng.
-# "json.dump" og "json.load" brukes for å skrive og lese filer i JSON-format.
-# ============================================
+
+
 
 def v5_sjekk_gyldig(emner, plan):
     avvik = []
@@ -185,7 +173,6 @@ def v7_les():
             data = json.load(f)
         emner = data.get("emner", {})
         plan = data.get("plan", tom_plan())
-        # sørg for at 1–6 finnes
         for i in range(1, 7):
             plan.setdefault(i, [])
         print(f"Lest fra '{fil}'.")
@@ -222,7 +209,7 @@ def main():
             if e is not None:
                 emner, plan = e, p
         elif valg == 8:
-            print("Avslutter. Ha en fin dag!")
+            print("Avslutter programmet.")
             break
 
 if __name__ == "__main__":
