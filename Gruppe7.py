@@ -54,21 +54,13 @@ def skriv_meny():
     print("7. Les inn emnene og studieplanen fra fil")
     print("8. Avslutt")
 
-# ============================================
-# === Del 2: Mika =============================
-# Domenelogikk, hjelpefunksjoner og menyvalg 1
-# --------------------------------------------
-# Forklaring:
-# En ordbok brukes til å lagre informasjon med nøkkel og verdi.
-# bruker en ordbok til å lagre hvilke emner som ligger i hvert semester.
-# ============================================
+# Del 2: Mika 
 
 def tom_plan():
     # Seks semestre (1–6), starter med tomme lister
     return {i: [] for i in range(1, 7)}
 
 def sem_type(sem):
-    # 1/3/5 = Høst, 2/4/6 = Vår
     return "H" if sem in (1, 3, 5) else "V"
 
 def sum_sp(emner, plan, sem):
