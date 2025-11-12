@@ -2,18 +2,6 @@
 # Gruppe: Tobias, Mika, Bonaa, Daniel
 
 import json
-from dataclasses import dataclass
-
-# =========================================================
-# Felles konstanter og småhjelpere
-# =========================================================
-SEMS = range(1, 7)
-
-def sem_type(semnr: int) -> str:
-    return "H" if semnr in (1, 3, 5) else "V"
-
-def linje(ch="-", n=72):
-    print(ch * n)
 
 # =========================================================
 # Del 1 – Tobias: I/O-hjelpere, meny og hovedloop
@@ -49,6 +37,10 @@ def ask_term(prompt="Termin (H/V): "):
             return s
         print("Skriv H (høst) eller V (vår).")
 
+def sem_type(semnr):
+    # 1,3,5 = H; 2,4,6 = V
+    return "H" if semnr in (1, 3, 5) else "V"
+
 def skriv_meny():
     print("\nMeny:")
     print("1. Lag et nytt emne")
@@ -63,7 +55,7 @@ def skriv_meny():
     print("10. Les inn emner og studieplaner fra fil")
     print("11. Avslutt")
 
-def velg_studieplan(studieplaner: dict):
+def velg_studieplan(studieplaner):
     if not studieplaner:
         print("Ingen studieplaner finnes. Opprett først (valg 5).")
         return None
@@ -76,7 +68,7 @@ def velg_studieplan(studieplaner: dict):
         print("Fant ikke studieplan.")
     return sp
 
-def velg_emne(emneregister: dict):
+def velg_emne(emneregister):
     if not emneregister:
         print("Ingen emner registrert. Lag emner først (valg 1).")
         return None
@@ -88,29 +80,22 @@ def velg_emne(emneregister: dict):
 
 # =========================================================
 # Del 2 – Mika: Emne-klassen, emneregister (valg 1 & 4)
-#                + lagring/lesing (valg 9 & 10)
+#               + lagring (valg 9)
 # =========================================================
 
-@dataclass
 class Emne:
-    kode: str
-    navn: str
-    termin: str   # 'H' eller 'V'
-    sp: int
-    eksamensform: str = ""
-    beskrivelse: str = ""
+    def __init__(self, kode, navn, termin, sp, eksamensform="", beskrivelse=""):
+        self.kode = kode.upper()
+        self.navn = navn
+        self.termin = termin.upper()  # 'H' eller 'V'
+        self.sp = int(sp)
+        self.eksamensform = eksamensform
+        self.beskrivelse = beskrivelse
 
-    def __post_init__(self):
-        self.kode = self.kode.upper()
-        self.termin = self.termin.upper()
-        self.sp = int(self.sp)
-
-    # Enkle “faglige” metoder
-    def passer_i_semester(self, semnr: int) -> bool:
+    def passer_i_semester(self, semnr):
         return self.termin == sem_type(semnr)
 
-    # Serialisering
-    def to_dict(self) -> dict:
+    def to_dict(self):
         return {
             "kode": self.kode,
             "navn": self.navn,
@@ -121,9 +106,9 @@ class Emne:
         }
 
     @staticmethod
-    def from_dict(d: dict) -> "Emne":
+    def from_dict(d):
         return Emne(
-            d["kode"], d.get("navn", ""),
+            d.get("kode", ""), d.get("navn", ""),
             d.get("termin", "H"), d.get("sp", 0),
             d.get("eksamensform", ""), d.get("beskrivelse", "")
         )
@@ -132,9 +117,9 @@ class Emne:
         return (f"{self.kode:10s} | navn: {self.navn} | termin: {self.termin} "
                 f"| sp: {self.sp:>2} | eksamen: {self.eksamensform or '-'}")
 
-# ---- Menyvalg 1 & 4 (Mika) ----
+# Menyvalg 1 & 4 & 9 (Mika)
 
-def v1_lag_emne(emneregister: dict):
+def v1_lag_emne(emneregister):
     kode = ask_str("Emnekode (f.eks. MAT100): ").upper()
     if kode in emneregister:
         print("Emnet finnes allerede.")
@@ -147,55 +132,20 @@ def v1_lag_emne(emneregister: dict):
     emneregister[kode] = Emne(kode, navn, termin, sp, eks, bes)
     print(f"Lagret {kode}.")
 
-
-def v4_skriv_emner(emneregister: dict):
+def v4_skriv_emner(emneregister):
     if not emneregister:
         print("Ingen emner registrert."); return
-    print("\nRegistrerte emner"); linje()
+    print("\nRegistrerte emner\n" + "-"*72)
     for kode in sorted(emneregister):
         print(str(emneregister[kode]))
-    linje()
+    print("-"*72)
 
-# ---- Lagring/lesing (Mika) flyttet hit for å korte ned Daniel ----
-
-def _emner_til_liste(emneregister: dict):
-    return [e.to_dict() for e in emneregister.values()]
-
-
-def _emner_fra_liste(lst: list) -> dict:
-    emneregister = {}
-    for d in lst or []:
-        e = Emne.from_dict(d)
-        emneregister[e.kode] = e
-    return emneregister
-
-
-def _studieplan_til_dict(sp: "Studieplan") -> dict:
-    # Serialiserer kun emnekoder per semester for enkel JSON
-    return {
-        "plan_id": sp.plan_id,
-        "tittel": sp.tittel,
-        "semestre": {str(k): [e.kode for e in v] for k, v in sp.semestre.items()},
-    }
-
-
-def _studieplan_fra_dict(d: dict, emneregister: dict) -> "Studieplan":
-    sp = Studieplan(d["plan_id"], d.get("tittel", "Uten tittel"))
-    for k, kodeliste in (d.get("semestre", {}) or {}).items():
-        semnr = int(k)
-        for kode in kodeliste:
-            e = emneregister.get(kode.upper())
-            if e:
-                sp.semestre[semnr].append(e)
-    return sp
-
-
-def v9_lagre(emneregister: dict, studieplaner: dict):
+def v9_lagre(emneregister, studieplaner):
     fil = ask_str("Filnavn (f.eks. data.json): ")
     try:
         data = {
-            "emner": _emner_til_liste(emneregister),
-            "studieplaner": [_studieplan_til_dict(sp) for sp in studieplaner.values()],
+            "emner": [e.to_dict() for e in emneregister.values()],
+            "studieplaner": [sp.to_dict() for sp in studieplaner.values()],
         }
         with open(fil, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
@@ -203,36 +153,18 @@ def v9_lagre(emneregister: dict, studieplaner: dict):
     except OSError as e:
         print("Feil ved lagring:", e)
 
-
-def v10_les():
-    fil = ask_str("Filnavn (f.eks. data.json): ")
-    try:
-        with open(fil, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        emneregister = _emner_fra_liste(data.get("emner", []))
-        studieplaner = {}
-        for pd in data.get("studieplaner", []) or []:
-            sp = _studieplan_fra_dict(pd, emneregister)
-            studieplaner[sp.plan_id] = sp
-        print(f"Lest fra '{fil}'.")
-        return emneregister, studieplaner
-    except (OSError, json.JSONDecodeError) as e:
-        print("Feil ved lesing:", e)
-        return None, None
-
 # =========================================================
-# Del 3 – Bonaa: Meny 2 & 3 (legg til / fjern emne i studieplan)
-#                + enkel støttefunksjon
+# Del 3 – Bonaa: planoperasjoner + innlesing + validering
+#                (valg 2, 3, 7-hjelper, 10)
 # =========================================================
 
-def finn_emne_i_semester(sp_liste, kode: str):
-    for idx, e in enumerate(sp_liste):
+def finn_emne_i_semester(sp_liste, kode):
+    for i, e in enumerate(sp_liste):
         if e.kode == kode:
-            return idx
+            return i
     return -1
 
-
-def v2_legg_til_emne_i_studieplan(studieplaner: dict, emneregister: dict):
+def v2_legg_til_emne_i_studieplan(studieplaner, emneregister):
     sp = velg_studieplan(studieplaner)
     if not sp: return
     emne = velg_emne(emneregister)
@@ -245,8 +177,7 @@ def v2_legg_til_emne_i_studieplan(studieplaner: dict, emneregister: dict):
     else:
         print("Kunne ikke legge til:", msg)
 
-
-def v3_fjern_emne_fra_studieplan(studieplaner: dict):
+def v3_fjern_emne_fra_studieplan(studieplaner):
     sp = velg_studieplan(studieplaner)
     if not sp: return
     kode = ask_str("Emnekode å fjerne: ").upper()
@@ -256,25 +187,69 @@ def v3_fjern_emne_fra_studieplan(studieplaner: dict):
     else:
         print("Fant ikke emnet i angitt semester.")
 
+# Enkel gyldighetssjekk (flyttet hit fra Daniel)
+
+def sjekk_plan(sp):
+    avvik = []
+    for sem in range(1, 7):
+        total = sp.sum_sp(sem)
+        if total != 30:
+            avvik.append(f"Semester {sem}: {total} sp (skal være 30 sp)")
+        for e in sp.semestre[sem]:
+            if not e.passer_i_semester(sem):
+                avvik.append(f"{e.kode} i sem {sem}: termin {e.termin} passer ikke {sem_type(sem)}")
+    return (len(avvik) == 0), avvik
+
+# Innlesing fra fil (flyttet hit fra Mika/Daniel)
+
+def v10_les():
+    fil = ask_str("Filnavn (f.eks. data.json): ")
+    try:
+        with open(fil, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        # Emner
+        emneregister = {}
+        for d in data.get("emner", []):
+            e = Emne.from_dict(d)
+            emneregister[e.kode] = e
+        # Studieplaner
+        studieplaner = {}
+        for pd in data.get("studieplaner", []):
+            sp = Studieplan(pd.get("plan_id", ""), pd.get("tittel", "Uten tittel"))
+            for k, kodeliste in (pd.get("semestre", {}) or {}).items():
+                semnr = int(k)
+                for kode in kodeliste:
+                    emne = emneregister.get(kode.upper())
+                    if emne:
+                        sp.semestre[semnr].append(emne)
+            studieplaner[sp.plan_id] = sp
+        print(f"Lest fra '{fil}'.")
+        return emneregister, studieplaner
+    except (OSError, json.JSONDecodeError) as e:
+        print("Feil ved lesing:", e)
+        return None, None
+
 # =========================================================
-# Del 4 – Daniel: Studieplan-klassen + meny 5–8 (plan/utskrift/gyldighet)
+# Del 4 – Daniel: Studieplan-klassen + utskrift/søk (valg 5, 6, 8)
 # =========================================================
 
 class Studieplan:
-    def __init__(self, plan_id: str, tittel: str):
+    def __init__(self, plan_id, tittel):
         self.plan_id = plan_id
         self.tittel = tittel
-        # Lagrer Emne-objekter per semester
-        self.semestre = {i: [] for i in SEMS}
+        self.semestre = {i: [] for i in range(1, 7)}  # Emne-objekter per semester
 
-    # ---- Kjernefunksjoner som metoder ----
-    def sum_sp(self, sem: int) -> int:
+    def sum_sp(self, sem):
         return sum(e.sp for e in self.semestre.get(sem, []))
 
-    def finnes(self, kode: str) -> bool:
-        return any(any(e.kode == kode for e in lst) for lst in self.semestre.values())
+    def finnes(self, kode):
+        for lst in self.semestre.values():
+            for e in lst:
+                if e.kode == kode:
+                    return True
+        return False
 
-    def legg_til_emne(self, emne: Emne, sem: int):
+    def legg_til_emne(self, emne, sem):
         if self.finnes(emne.kode):
             return False, "Emnet finnes allerede i denne studieplanen."
         if not emne.passer_i_semester(sem):
@@ -285,18 +260,17 @@ class Studieplan:
         self.semestre[sem].append(emne)
         return True, ""
 
-    def fjern_emne(self, kode: str, sem: int) -> bool:
+    def fjern_emne(self, kode, sem):
         lst = self.semestre.get(sem, [])
-        idx = finn_emne_i_semester(lst, kode)
-        if idx >= 0:
-            lst.pop(idx)
+        i = finn_emne_i_semester(lst, kode)
+        if i >= 0:
+            lst.pop(i)
             return True
         return False
 
     def skriv_ut(self):
-        print(f"\nStudieplan: {self.tittel} (id: {self.plan_id})")
-        linje("=")
-        for sem in SEMS:
+        print(f"\nStudieplan: {self.tittel} (id: {self.plan_id})\n" + "="*72)
+        for sem in range(1, 7):
             sesong = "Høst" if sem_type(sem) == "H" else "Vår"
             print(f"Semester {sem} ({sesong})")
             if not self.semestre[sem]:
@@ -304,23 +278,19 @@ class Studieplan:
             else:
                 for e in self.semestre[sem]:
                     print(f"  - {e.kode} {e.navn} ({e.sp} sp)")
-            print(f"  Sum: {self.sum_sp(sem)} sp")
-            linje()
+            print(f"  Sum: {self.sum_sp(sem)} sp\n" + "-"*72)
 
-    def er_gyldig(self):
-        avvik = []
-        for sem in SEMS:
-            total = self.sum_sp(sem)
-            if total != 30:
-                avvik.append(f"Semester {sem}: {total} sp (skal være 30 sp)")
-            for e in self.semestre[sem]:
-                if not e.passer_i_semester(sem):
-                    avvik.append(f"{e.kode} i sem {sem}: termin {e.termin} passer ikke {sem_type(sem)}")
-        return (len(avvik) == 0), avvik
+    # Enkel serialisering av studieplan (brukes av Mika.v9_lagre)
+    def to_dict(self):
+        return {
+            "plan_id": self.plan_id,
+            "tittel": self.tittel,
+            "semestre": {str(k): [e.kode for e in v] for k, v in self.semestre.items()}
+        }
 
-# ---- Menyvalg styrt av Daniel (5–8) ----
+# Menyvalg 5, 6, 8 (Daniel)
 
-def v5_ny_studieplan(studieplaner: dict):
+def v5_ny_studieplan(studieplaner):
     plan_id = ask_str("Ny studieplan id: ")
     if plan_id in studieplaner:
         print("Id er allerede i bruk."); return
@@ -328,16 +298,14 @@ def v5_ny_studieplan(studieplaner: dict):
     studieplaner[plan_id] = Studieplan(plan_id, tittel)
     print(f"Laget studieplan '{tittel}' (id: {plan_id}).")
 
-
-def v6_skriv_studieplan(studieplaner: dict):
+def v6_skriv_studieplan(studieplaner):
     sp = velg_studieplan(studieplaner)
     if sp: sp.skriv_ut()
 
-
-def v7_sjekk_gyldig(studieplaner: dict):
+def v7_sjekk_gyldig(studieplaner):
     sp = velg_studieplan(studieplaner)
     if not sp: return
-    ok, avvik = sp.er_gyldig()
+    ok, avvik = sjekk_plan(sp)  # Bruker Bonaa sin funksjon
     if ok:
         print("Studieplanen er gyldig. ✔")
     else:
@@ -345,12 +313,14 @@ def v7_sjekk_gyldig(studieplaner: dict):
         for a in avvik:
             print("  -", a)
 
-
-def v8_finn_planer_for_emne(studieplaner: dict):
+def v8_finn_planer_for_emne(studieplaner):
     if not studieplaner:
         print("Ingen studieplaner finnes."); return
     kode = ask_str("Emnekode: ").upper()
-    brukere = [sp.tittel for sp in studieplaner.values() if sp.finnes(kode)]
+    brukere = []
+    for sp in studieplaner.values():
+        if sp.finnes(kode):
+            brukere.append(sp.tittel)
     if brukere:
         print("Studieplaner som bruker emnet:")
         for t in brukere:
@@ -363,8 +333,8 @@ def v8_finn_planer_for_emne(studieplaner: dict):
 # =========================================================
 
 def main():
-    emneregister = {}      # dict[str, Emne]
-    studieplaner = {}      # dict[str, Studieplan]
+    emneregister = {}
+    studieplaner = {}
 
     while True:
         skriv_meny()
