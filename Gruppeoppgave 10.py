@@ -2,6 +2,18 @@
 # Gruppe: Tobias, Mika, Bonaa, Daniel
 
 import json
+from dataclasses import dataclass
+
+# =========================================================
+# Felles konstanter og småhjelpere
+# =========================================================
+SEMS = range(1, 7)
+
+def sem_type(semnr: int) -> str:
+    return "H" if semnr in (1, 3, 5) else "V"
+
+def linje(ch="-", n=72):
+    print(ch * n)
 
 # =========================================================
 # Del 1 – Tobias: I/O-hjelpere, meny og hovedloop
@@ -36,9 +48,6 @@ def ask_term(prompt="Termin (H/V): "):
         if s in ("H", "V"):
             return s
         print("Skriv H (høst) eller V (vår).")
-
-def sem_type(semnr: int) -> str:
-    return "H" if semnr in (1, 3, 5) else "V"
 
 def skriv_meny():
     print("\nMeny:")
@@ -78,22 +87,29 @@ def velg_emne(emneregister: dict):
     return emne
 
 # =========================================================
-# Del 2 – Mika: Emne-klassen og emneregister (valg 1 & 4)
+# Del 2 – Mika: Emne-klassen, emneregister (valg 1 & 4)
+#                + lagring/lesing (valg 9 & 10)
 # =========================================================
 
+@dataclass
 class Emne:
-    def __init__(self, kode: str, navn: str, termin: str, sp: int,
-                 eksamensform: str = "", beskrivelse: str = ""):
-        self.kode = kode.upper()
-        self.navn = navn
-        self.termin = termin.upper()   # 'H' eller 'V'
-        self.sp = int(sp)
-        self.eksamensform = eksamensform
-        self.beskrivelse = beskrivelse
+    kode: str
+    navn: str
+    termin: str   # 'H' eller 'V'
+    sp: int
+    eksamensform: str = ""
+    beskrivelse: str = ""
 
+    def __post_init__(self):
+        self.kode = self.kode.upper()
+        self.termin = self.termin.upper()
+        self.sp = int(self.sp)
+
+    # Enkle “faglige” metoder
     def passer_i_semester(self, semnr: int) -> bool:
         return self.termin == sem_type(semnr)
 
+    # Serialisering
     def to_dict(self) -> dict:
         return {
             "kode": self.kode,
@@ -116,6 +132,8 @@ class Emne:
         return (f"{self.kode:10s} | navn: {self.navn} | termin: {self.termin} "
                 f"| sp: {self.sp:>2} | eksamen: {self.eksamensform or '-'}")
 
+# ---- Menyvalg 1 & 4 (Mika) ----
+
 def v1_lag_emne(emneregister: dict):
     kode = ask_str("Emnekode (f.eks. MAT100): ").upper()
     if kode in emneregister:
@@ -129,17 +147,82 @@ def v1_lag_emne(emneregister: dict):
     emneregister[kode] = Emne(kode, navn, termin, sp, eks, bes)
     print(f"Lagret {kode}.")
 
+
 def v4_skriv_emner(emneregister: dict):
     if not emneregister:
         print("Ingen emner registrert."); return
-    print("\nRegistrerte emner\n" + "-"*72)
+    print("\nRegistrerte emner"); linje()
     for kode in sorted(emneregister):
         print(str(emneregister[kode]))
-    print("-"*72)
+    linje()
+
+# ---- Lagring/lesing (Mika) flyttet hit for å korte ned Daniel ----
+
+def _emner_til_liste(emneregister: dict):
+    return [e.to_dict() for e in emneregister.values()]
+
+
+def _emner_fra_liste(lst: list) -> dict:
+    emneregister = {}
+    for d in lst or []:
+        e = Emne.from_dict(d)
+        emneregister[e.kode] = e
+    return emneregister
+
+
+def _studieplan_til_dict(sp: "Studieplan") -> dict:
+    # Serialiserer kun emnekoder per semester for enkel JSON
+    return {
+        "plan_id": sp.plan_id,
+        "tittel": sp.tittel,
+        "semestre": {str(k): [e.kode for e in v] for k, v in sp.semestre.items()},
+    }
+
+
+def _studieplan_fra_dict(d: dict, emneregister: dict) -> "Studieplan":
+    sp = Studieplan(d["plan_id"], d.get("tittel", "Uten tittel"))
+    for k, kodeliste in (d.get("semestre", {}) or {}).items():
+        semnr = int(k)
+        for kode in kodeliste:
+            e = emneregister.get(kode.upper())
+            if e:
+                sp.semestre[semnr].append(e)
+    return sp
+
+
+def v9_lagre(emneregister: dict, studieplaner: dict):
+    fil = ask_str("Filnavn (f.eks. data.json): ")
+    try:
+        data = {
+            "emner": _emner_til_liste(emneregister),
+            "studieplaner": [_studieplan_til_dict(sp) for sp in studieplaner.values()],
+        }
+        with open(fil, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        print(f"Lagret til '{fil}'.")
+    except OSError as e:
+        print("Feil ved lagring:", e)
+
+
+def v10_les():
+    fil = ask_str("Filnavn (f.eks. data.json): ")
+    try:
+        with open(fil, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        emneregister = _emner_fra_liste(data.get("emner", []))
+        studieplaner = {}
+        for pd in data.get("studieplaner", []) or []:
+            sp = _studieplan_fra_dict(pd, emneregister)
+            studieplaner[sp.plan_id] = sp
+        print(f"Lest fra '{fil}'.")
+        return emneregister, studieplaner
+    except (OSError, json.JSONDecodeError) as e:
+        print("Feil ved lesing:", e)
+        return None, None
 
 # =========================================================
 # Del 3 – Bonaa: Meny 2 & 3 (legg til / fjern emne i studieplan)
-#         + enkel støttefunksjon
+#                + enkel støttefunksjon
 # =========================================================
 
 def finn_emne_i_semester(sp_liste, kode: str):
@@ -147,6 +230,7 @@ def finn_emne_i_semester(sp_liste, kode: str):
         if e.kode == kode:
             return idx
     return -1
+
 
 def v2_legg_til_emne_i_studieplan(studieplaner: dict, emneregister: dict):
     sp = velg_studieplan(studieplaner)
@@ -161,6 +245,7 @@ def v2_legg_til_emne_i_studieplan(studieplaner: dict, emneregister: dict):
     else:
         print("Kunne ikke legge til:", msg)
 
+
 def v3_fjern_emne_fra_studieplan(studieplaner: dict):
     sp = velg_studieplan(studieplaner)
     if not sp: return
@@ -172,7 +257,7 @@ def v3_fjern_emne_fra_studieplan(studieplaner: dict):
         print("Fant ikke emnet i angitt semester.")
 
 # =========================================================
-# Del 4 – Daniel: Studieplan-klassen + meny 5–10 (plan/lagre/les)
+# Del 4 – Daniel: Studieplan-klassen + meny 5–8 (plan/utskrift/gyldighet)
 # =========================================================
 
 class Studieplan:
@@ -180,7 +265,7 @@ class Studieplan:
         self.plan_id = plan_id
         self.tittel = tittel
         # Lagrer Emne-objekter per semester
-        self.semestre = {i: [] for i in range(1, 7)}
+        self.semestre = {i: [] for i in SEMS}
 
     # ---- Kjernefunksjoner som metoder ----
     def sum_sp(self, sem: int) -> int:
@@ -209,8 +294,9 @@ class Studieplan:
         return False
 
     def skriv_ut(self):
-        print(f"\nStudieplan: {self.tittel} (id: {self.plan_id})\n" + "="*72)
-        for sem in range(1, 7):
+        print(f"\nStudieplan: {self.tittel} (id: {self.plan_id})")
+        linje("=")
+        for sem in SEMS:
             sesong = "Høst" if sem_type(sem) == "H" else "Vår"
             print(f"Semester {sem} ({sesong})")
             if not self.semestre[sem]:
@@ -218,42 +304,21 @@ class Studieplan:
             else:
                 for e in self.semestre[sem]:
                     print(f"  - {e.kode} {e.navn} ({e.sp} sp)")
-            print(f"  Sum: {self.sum_sp(sem)} sp\n" + "-"*72)
+            print(f"  Sum: {self.sum_sp(sem)} sp")
+            linje()
 
     def er_gyldig(self):
         avvik = []
-        for sem in range(1, 7):
+        for sem in SEMS:
             total = self.sum_sp(sem)
             if total != 30:
                 avvik.append(f"Semester {sem}: {total} sp (skal være 30 sp)")
-            # Ensartet termin-sjekk for alle emner
             for e in self.semestre[sem]:
                 if not e.passer_i_semester(sem):
                     avvik.append(f"{e.kode} i sem {sem}: termin {e.termin} passer ikke {sem_type(sem)}")
         return (len(avvik) == 0), avvik
 
-    # ---- Serialisering ----
-    def to_dict(self):
-        # Lagre emnereferanser som koder per semester
-        return {
-            "plan_id": self.plan_id,
-            "tittel": self.tittel,
-            "semestre": {str(k): [e.kode for e in v] for k, v in self.semestre.items()}
-        }
-
-    @staticmethod
-    def from_dict(d: dict, emneregister: dict) -> "Studieplan":
-        sp = Studieplan(d["plan_id"], d.get("tittel", "Uten tittel"))
-        sem = d.get("semestre", {})
-        for k, kodeliste in sem.items():
-            semnr = int(k)
-            for kode in kodeliste:
-                e = emneregister.get(kode.upper())
-                if e:
-                    sp.semestre[semnr].append(e)
-        return sp
-
-# ---- Menyvalg styrt av Daniel ----
+# ---- Menyvalg styrt av Daniel (5–8) ----
 
 def v5_ny_studieplan(studieplaner: dict):
     plan_id = ask_str("Ny studieplan id: ")
@@ -263,9 +328,11 @@ def v5_ny_studieplan(studieplaner: dict):
     studieplaner[plan_id] = Studieplan(plan_id, tittel)
     print(f"Laget studieplan '{tittel}' (id: {plan_id}).")
 
+
 def v6_skriv_studieplan(studieplaner: dict):
     sp = velg_studieplan(studieplaner)
     if sp: sp.skriv_ut()
+
 
 def v7_sjekk_gyldig(studieplaner: dict):
     sp = velg_studieplan(studieplaner)
@@ -278,6 +345,7 @@ def v7_sjekk_gyldig(studieplaner: dict):
         for a in avvik:
             print("  -", a)
 
+
 def v8_finn_planer_for_emne(studieplaner: dict):
     if not studieplaner:
         print("Ingen studieplaner finnes."); return
@@ -289,40 +357,6 @@ def v8_finn_planer_for_emne(studieplaner: dict):
             print(" -", t)
     else:
         print("Ingen studieplaner bruker dette emnet.")
-
-def v9_lagre(emneregister: dict, studieplaner: dict):
-    fil = ask_str("Filnavn (f.eks. data.json): ")
-    try:
-        data = {
-            "emner": [e.to_dict() for e in emneregister.values()],
-            "studieplaner": [sp.to_dict() for sp in studieplaner.values()]
-        }
-        with open(fil, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        print(f"Lagret til '{fil}'.")
-    except OSError as e:
-        print("Feil ved lagring:", e)
-
-def v10_les():
-    fil = ask_str("Filnavn (f.eks. data.json): ")
-    try:
-        with open(fil, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        # Bygg emneregister først
-        emneregister = {}
-        for d in data.get("emner", []):
-            e = Emne.from_dict(d)
-            emneregister[e.kode] = e
-        # Bygg studieplaner og knytt emner
-        studieplaner = {}
-        for pd in data.get("studieplaner", []):
-            sp = Studieplan.from_dict(pd, emneregister)
-            studieplaner[sp.plan_id] = sp
-        print(f"Lest fra '{fil}'.")
-        return emneregister, studieplaner
-    except (OSError, json.JSONDecodeError) as e:
-        print("Feil ved lesing:", e)
-        return None, None
 
 # =========================================================
 # Tobias – hovedprogram
