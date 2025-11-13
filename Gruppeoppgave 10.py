@@ -86,11 +86,10 @@ def velg_emne(emneregister):
     return emne
 
 
-# Mika
+# Mika klasse emne, valg 1, 4 og 9
 
 class Emne:
     def __init__(self, kode, navn, termin, sp):
-        # Gjør koden ryddig og i store bokstaver
         self.kode = norm_code(kode)
         self.navn = navn
 
@@ -99,12 +98,10 @@ class Emne:
         else:
             self.termin = "H"
 
-        # Studiepoeng skal være heltall
         self.sp = int(sp)
 
     def passer_i_semester(self, semnr):
         return self.termin == sem_type(semnr)
-    # Sjekker om emnet passer til dette semesternummeret
 
     def to_dict(self): 
         return {"kode": self.kode, "navn": self.navn, "termin": self.termin, "sp": self.sp}
@@ -117,7 +114,6 @@ class Emne:
 
 
 def v1_lag_emne(emneregister):
-    # Opprett et nytt emne ved å spørre brukeren
     kode = norm_code(ask_str("Emnekode (f.eks. MAT100): "))
 
     if kode in emneregister:
