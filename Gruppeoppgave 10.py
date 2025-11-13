@@ -3,9 +3,7 @@
 
 import json
 
-# =========================================================
-# Del 1 – Tobias: I/O-hjelpere, meny og hovedloop
-# =========================================================
+# Del 1 – Tobias: meny og hovedloop + hjelpefunksjoner
 
 def linje(ch="-", n=72):
     print(ch * n)
@@ -356,9 +354,8 @@ def v8_finn_planer_for_emne(studieplaner):
     else:
         print("Ingen studieplaner bruker dette emnet.")
 
-# =========================================================
-# Tobias – hovedprogram
-# =========================================================
+
+# Tobias
 
 def main():
     emneregister = {}
