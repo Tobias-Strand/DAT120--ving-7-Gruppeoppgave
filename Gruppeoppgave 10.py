@@ -94,11 +94,8 @@ class Emne:
     def __init__(self, kode, navn, termin, sp):
         # Gjør koden ryddig og i store bokstaver
         self.kode = norm_code(kode)
-
-        # Lagre navnet slik det er
         self.navn = navn
 
-        # Termin skal være H (høst) eller V (vår)
         if termin:
             self.termin = termin.strip().upper()
         else:
@@ -111,29 +108,14 @@ class Emne:
         return self.termin == sem_type(semnr)
     # Sjekker om emnet passer til dette semesternummeret
 
-    def to_dict(self):
-        return {
-            "kode": self.kode,
-            "navn": self.navn,
-            "termin": self.termin,
-            "sp": self.sp
-        }
+    def to_dict(self): 
+        return {"kode": self.kode, "navn": self.navn, "termin": self.termin, "sp": self.sp}
 
-    def from_dict(d):
-        return Emne(
-            d.get("kode", ""),
-            d.get("navn", ""),
-            d.get("termin", "H"),
-            d.get("sp", 0)
-        )
-# Lager et nytt Emne-objekt fra dictorinariet
+    def from_dict(d): 
+        return Emne(d.get("kode", ""), d.get("navn", ""), d.get("termin", "H"), d.get("sp", 0))
     
     def __str__(self):
-        # For utskrift av emnet på en ryddig måte
-        return (
-            f"{self.kode:10s} | navn: {self.navn} | "
-            f"termin: {self.termin} | sp: {self.sp:>2}"
-        )
+        return (f"{self.kode} | navn: {self.navn} | termin: {self.termin} | sp: {self.sp}")
 
 
 def v1_lag_emne(emneregister):
@@ -148,13 +130,11 @@ def v1_lag_emne(emneregister):
     termin = ask_term("Termin (H/V): ")
     sp = ask_int("Studiepoeng (heltall): ", lo=1)
 
-    # Lagre emnet
     emneregister[kode] = Emne(kode, navn, termin, sp)
     print(f"Lagret {kode}.")
 
 
 def v4_skriv_emner(emneregister):
-    # Skriv ut alle registrerte emner
     if not emneregister:
         print("Ingen emner registrert.")
         return
@@ -169,7 +149,6 @@ def v4_skriv_emner(emneregister):
 
 
 def v9_lagre(emneregister, studieplaner):
-    # Lagrer emner og studieplaner til en JSON-fil
     fil = ask_str("Filnavn (f.eks. data.json): ")
 
     try:
@@ -178,7 +157,7 @@ def v9_lagre(emneregister, studieplaner):
         data["studieplaner"] = [sp.to_dict() for sp in studieplaner.values()]
 
         with open(fil, "w", encoding="utf-8") as fil:
-            json.dump(data, fil, ensure_ascii=False, indent=2) # ensure_ascii for at den kan lese norske bokstaver
+            json.dump(data, fil, ensure_ascii=False, indent=2)
 
         print(f"Lagret til '{fil}'.")
     except OSError as feil:
