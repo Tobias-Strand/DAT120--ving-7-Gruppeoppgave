@@ -1,9 +1,9 @@
-# DAT120 Øving 10 – Gruppeprosjekt del 2
+# DAT120 Øving 10 Gruppeprosjekt del 2
 # Gruppe: Tobias, Mika, Bonaa, Daniel
 
 import json
 
-# Del 1 – Tobias: meny og hovedloop + hjelpefunksjoner
+# Del 1 Tobias: meny og hovedloop + hjelpefunksjoner
 
 def linje(ch="-", n=72):
     print(ch * n)
