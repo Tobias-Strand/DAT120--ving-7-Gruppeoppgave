@@ -263,7 +263,7 @@ class Studieplan:
         for lst in self.semestre.values():
             for e in lst:
                 if e.kode == kode:
-                    return True
+                    return True 
         return False
 
     def legg_til_emne(self, emne, sem):
