@@ -3,9 +3,7 @@
 
 import json
 
-# =========================================================
-# Del 1 – Tobias: I/O-hjelpere, meny og hovedloop
-# =========================================================
+# Del 1 – Tobias: meny og hovedloop + hjelpefunksjoner
 
 def linje(ch="-", n=72):
     print(ch * n)
@@ -228,9 +226,7 @@ def v10_les():
         print("Feil ved lesing:", e)
         return None, None
 
-# =========================================================
-# Del 4 – Daniel: Studieplan-klassen + utskrift/søk/gyldighet (valg 5, 6, 7, 8)
-# =========================================================
+ #Daniel:
 
 class Studieplan:
     def __init__(self, plan_id, tittel):
@@ -295,7 +291,7 @@ class Studieplan:
                     avvik.append(f"{e.kode} i sem {sem}: termin {e.termin} passer ikke {sem_type(sem)}")
         return (len(avvik) == 0), avvik
 
-# Menyvalg 5, 6, 7, 8 (Daniel)
+# Menyvalg 
 
 def v5_ny_studieplan(studieplaner):
     plan_id = norm_id(ask_str("Ny studieplan id: "))
@@ -335,9 +331,8 @@ def v8_finn_planer_for_emne(studieplaner):
     else:
         print("Ingen studieplaner bruker dette emnet.")
 
-# =========================================================
-# Tobias – hovedprogram
-# =========================================================
+
+# Tobias
 
 def main():
     emneregister = {}
