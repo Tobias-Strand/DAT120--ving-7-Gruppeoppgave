@@ -228,9 +228,7 @@ def v10_les():
         print("Feil ved lesing:", e)
         return None, None
 
-# =========================================================
-# Del 4 – Daniel: Studieplan-klassen + utskrift/søk/gyldighet (valg 5, 6, 7, 8)
-# =========================================================
+ #Daniel:
 
 class Studieplan:
     def __init__(self, plan_id, tittel):
@@ -295,7 +293,7 @@ class Studieplan:
                     avvik.append(f"{e.kode} i sem {sem}: termin {e.termin} passer ikke {sem_type(sem)}")
         return (len(avvik) == 0), avvik
 
-# Menyvalg 5, 6, 7, 8 (Daniel)
+# Menyvalg 
 
 def v5_ny_studieplan(studieplaner):
     plan_id = norm_id(ask_str("Ny studieplan id: "))
