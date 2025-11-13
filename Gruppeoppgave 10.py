@@ -1,11 +1,9 @@
-# DAT120 Øving 7 – Gruppeprosjekt del 2
+# DAT120 Øving 10 – Gruppeprosjekt del 2
 # Gruppe: Tobias, Mika, Bonaa, Daniel
 
 import json
 
-# =========================================================
-# Del 1 – Tobias: I/O-hjelpere, meny og hovedloop
-# =========================================================
+# Del 1 – Tobias: meny og hovedloop + hjelpefunksjoner
 
 def linje(ch="-", n=72):
     print(ch * n)
@@ -87,81 +85,102 @@ def velg_emne(emneregister):
         print("Emnet finnes ikke.")
     return emne
 
-# =========================================================
-# Del 2 – Mika: Emne-klassen, emneregister (valg 1 & 4)
-#               + lagring (valg 9)
-# =========================================================
+
+# Mika
 
 class Emne:
-    def __init__(self, kode, navn, termin, sp, eksamensform="", beskrivelse=""):
+    def __init__(self, kode, navn, termin, sp):
+        # Gjør koden ryddig og i store bokstaver
         self.kode = norm_code(kode)
+
+        # Lagre navnet slik det er
         self.navn = navn
-        self.termin = (termin or "H").strip().upper()  # 'H' eller 'V'
+
+        # Termin skal være H (høst) eller V (vår)
+        if termin:
+            self.termin = termin.strip().upper()
+        else:
+            self.termin = "H"
+
+        # Studiepoeng skal være heltall
         self.sp = int(sp)
-        self.eksamensform = eksamensform
-        self.beskrivelse = beskrivelse
 
     def passer_i_semester(self, semnr):
         return self.termin == sem_type(semnr)
+    # Sjekker om emnet passer til dette semesternummeret
 
     def to_dict(self):
         return {
             "kode": self.kode,
             "navn": self.navn,
             "termin": self.termin,
-            "sp": self.sp,
-            "eksamensform": self.eksamensform,
-            "beskrivelse": self.beskrivelse,
+            "sp": self.sp
         }
 
-    @staticmethod
     def from_dict(d):
         return Emne(
-            d.get("kode", ""), d.get("navn", ""),
-            d.get("termin", "H"), d.get("sp", 0),
-            d.get("eksamensform", ""), d.get("beskrivelse", "")
+            d.get("kode", ""),
+            d.get("navn", ""),
+            d.get("termin", "H"),
+            d.get("sp", 0)
+        )
+# Lager et nytt Emne-objekt fra dictorinariet
+    
+    def __str__(self):
+        # For utskrift av emnet på en ryddig måte
+        return (
+            f"{self.kode:10s} | navn: {self.navn} | "
+            f"termin: {self.termin} | sp: {self.sp:>2}"
         )
 
-    def __str__(self):
-        return (f"{self.kode:10s} | navn: {self.navn} | termin: {self.termin} "
-                f"| sp: {self.sp:>2} | eksamen: {self.eksamensform or '-'}")
-
-# Menyvalg 1 & 4 & 9 (Mika)
 
 def v1_lag_emne(emneregister):
+    # Opprett et nytt emne ved å spørre brukeren
     kode = norm_code(ask_str("Emnekode (f.eks. MAT100): "))
+
     if kode in emneregister:
         print("Emnet finnes allerede.")
         return
+
     navn = ask_str("Navn: ")
     termin = ask_term("Termin (H/V): ")
     sp = ask_int("Studiepoeng (heltall): ", lo=1)
-    eks = ask_opt_str("Eksamensform (valgfritt): ")
-    bes = ask_opt_str("Beskrivelse (valgfritt): ")
-    emneregister[kode] = Emne(kode, navn, termin, sp, eks, bes)
+
+    # Lagre emnet
+    emneregister[kode] = Emne(kode, navn, termin, sp)
     print(f"Lagret {kode}.")
 
+
 def v4_skriv_emner(emneregister):
+    # Skriv ut alle registrerte emner
     if not emneregister:
-        print("Ingen emner registrert."); return
+        print("Ingen emner registrert.")
+        return
+
     print("\nRegistrerte emner")
     linje()
+
     for kode in sorted(emneregister):
         print(str(emneregister[kode]))
+
     linje()
 
+
 def v9_lagre(emneregister, studieplaner):
+    # Lagrer emner og studieplaner til en JSON-fil
     fil = ask_str("Filnavn (f.eks. data.json): ")
+
     try:
-        data = {
-            "emner": [e.to_dict() for e in emneregister.values()],
-            "studieplaner": [sp.to_dict() for sp in studieplaner.values()],
-        }
-        with open(fil, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        data = {}
+        data["emner"] = [emner.to_dict() for emner in emneregister.values()]
+        data["studieplaner"] = [sp.to_dict() for sp in studieplaner.values()]
+
+        with open(fil, "w", encoding="utf-8") as fil:
+            json.dump(data, fil, ensure_ascii=False, indent=2) # ensure_ascii for at den kan lese norske bokstaver
+
         print(f"Lagret til '{fil}'.")
-    except OSError as e:
-        print("Feil ved lagring:", e)
+    except OSError as feil:
+        print("Feil ved lagring:", feil)
 
 # =========================================================
 # Del 3 – Bonaa: planoperasjoner + innlesing (valg 2, 3, 10)
@@ -333,9 +352,8 @@ def v8_finn_planer_for_emne(studieplaner):
     else:
         print("Ingen studieplaner bruker dette emnet.")
 
-# =========================================================
-# Tobias – hovedprogram
-# =========================================================
+
+# Tobias
 
 def main():
     emneregister = {}
