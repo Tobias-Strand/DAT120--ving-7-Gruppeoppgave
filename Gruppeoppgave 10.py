@@ -1,9 +1,9 @@
-# DAT120 Øving 10 – Gruppeprosjekt del 2
+# DAT120 Øving 10 Gruppeprosjekt del 2
 # Gruppe: Tobias, Mika, Bonaa, Daniel
 
 import json
 
-# Del 1 – Tobias: meny og hovedloop + hjelpefunksjoner
+# Del 1 Tobias: meny og hovedloop + hjelpefunksjoner
 
 def linje(ch="-", n=72):
     print(ch * n)
@@ -157,68 +157,66 @@ def v9_lagre(emneregister, studieplaner):
     except OSError as feil:
         print("Feil ved lagring:", feil)
 
-# =========================================================
-# Del 3 – Bonaa: planoperasjoner + innlesing (valg 2, 3, 10)
-# =========================================================
+#Bonaa
 
 def finn_emne_i_semester(sp_liste, kode):
-    for i, e in enumerate(sp_liste):
-        if e.kode == kode:
-            return i
-    return -1
+    for i, e in enumerate(sp_liste): #går gjennom lista, får indeks og emneobjekt
+        if e.kode == kode: #sjekker hvis emnekoden matcher
+            return i 
+    return -1 # hvis emnet ikke finnes
 
 def v2_legg_til_emne_i_studieplan(studieplaner, emneregister):
-    sp = velg_studieplan(studieplaner)
-    if not sp: return
-    emne = velg_emne(emneregister)
+    sp = velg_studieplan(studieplaner) #velger studieplan
+    if not sp: return #avbryter hvis ingenting blir valgt
+    emne = velg_emne(emneregister) #velger emne
     if not emne: return
-    sem = ask_int("Semester (1–6): ", lo=1, hi=6)
+    sem = ask_int("Semester (1–6): ", lo=1, hi=6) #semester 1-6
 
-    ok, msg = sp.legg_til_emne(emne, sem)
+    ok, msg = sp.legg_til_emne(emne, sem) #legger emne til studieplan
     if ok:
         print(f"La til {emne.kode} i semester {sem}. (Sum nå: {sp.sum_sp(sem)} sp)")
     else:
         print("Kunne ikke legge til:", msg)
 
-def v3_fjern_emne_fra_studieplan(studieplaner):
-    sp = velg_studieplan(studieplaner)
+def v3_fjern_emne_fra_studieplan(studieplaner): 
+    sp = velg_studieplan(studieplaner) #velge studieplan
     if not sp: return
-    kode = norm_code(ask_str("Emnekode å fjerne: "))
-    sem = ask_int("Fra hvilket semester (1–6): ", lo=1, hi=6)
+    kode = norm_code(ask_str("Emnekode å fjerne: ")) #leser inn emner koder og normaliserer den
+    sem = ask_int("Fra hvilket semester (1–6): ", lo=1, hi=6) #leser semester og validerer den
     if sp.fjern_emne(kode, sem):
-        print(f"Fjernet {kode} fra semester {sem}.")
+        print(f"Fjernet {kode} fra semester {sem}.") #fjerne emne fra gitt semester
     else:
-        print("Fant ikke emnet i angitt semester.")
+        print("Fant ikke emnet i angitt semester.") #fant ikke emnet
 
 def v10_les():
-    fil = ask_str("Filnavn (f.eks. data.json): ")
+    fil = ask_str("Filnavn (f.eks. data.json): ") #leser fra json fil
     try:
         with open(fil, "r", encoding="utf-8") as f:
-            data = json.load(f)
+            data = json.load(f) # leser json innhold i python fil 
         # Emner
-        emneregister = {}
-        for d in data.get("emner", []):
+        emneregister = {} #tom emneregister
+        for d in data.get("emner", []): #går gjennom alle emne dict
             e = Emne.from_dict(d)
-            emneregister[e.kode] = e
+            emneregister[e.kode] = e #legger emne inn i registeret
         # Studieplaner
-        studieplaner = {}
-        advarsler = []
-        for pd in data.get("studieplaner", []):
-            sp = Studieplan(norm_id(pd.get("plan_id", "")), pd.get("tittel", "Uten tittel"))
-            for k, kodeliste in (pd.get("semestre", {}) or {}).items():
-                semnr = int(k)
+        studieplaner = {} #tom studieplanregister
+        advarsler = [] #liste for lagring av advarsler
+        for pd in data.get("studieplaner", []): #går gjennom alle studieplan-dict i JSON
+            sp = Studieplan(norm_id(pd.get("plan_id", "")), pd.get("tittel", "Uten tittel")) #lager en studieplan med tittel og id
+            for k, kodeliste in (pd.get("semestre", {}) or {}).items(): #går gjennom alle semestre og emner
+                semnr = int(k) #konverter fra string til int
                 for kode in kodeliste:
-                    emne = emneregister.get(norm_code(kode))
+                    emne = emneregister.get(norm_code(kode)) #normaliserer og slår opp emne
                     if emne:
-                        sp.semestre[semnr].append(emne)
+                        sp.semestre[semnr].append(emne) #legger emne inn i semester
                     else:
                         advarsler.append(f"Advarsel: Emnekode '{kode}' finnes ikke i emneregisteret. Hopper over.")
             studieplaner[sp.plan_id] = sp
-        print(f"Lest fra '{fil}'.")
-        for a in advarsler:
-            print(a)
-        return emneregister, studieplaner
-    except (OSError, json.JSONDecodeError) as e:
+        print(f"Lest fra '{fil}'.") #sier filen er lest in
+        for a in advarsler: #går gjennom alle advarsler
+            print(a) #skriver ut hver advarsel
+        return emneregister, studieplaner #returnerer datastrukturene
+    except (OSError, json.JSONDecodeError) as e: #feilhåndtering
         print("Feil ved lesing:", e)
         return None, None
 
